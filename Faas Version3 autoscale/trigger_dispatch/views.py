@@ -134,7 +134,62 @@ def code_detail(request, trigger_id):
     else:
      return render(request, 'trigger_dispatch/code_detail_node.html', {'trigger': trigger,})   
     
+#Load testing
+def load_test(request,trigger_id,num_requests,thread_id):
+    response_times = []
+    request.method = 'POST'
+    request.POST = {'code': 'print("Hello, world!")', 'parameters': ''}
+    for i in range(1, num_requests + 1):
+        start_time = time.time()
+        response = dispatch_test_trigger(request,trigger_id,thread_id)
+        end_time = time.time()
+        response_time = end_time - start_time
+        response_times.append(response_time)
+        # print(f'Request {i}: Response Time: {response_time}')
+    return response_times 
 
+def send_req_and_plot(request, trigger_id):
+    num_users = 15  # Number of concurrent users
+    num_requests_per_user = 40  # Number of requests per user
+    max_requests = 100  # Maximum number of requests
+    avg_response_times = []
+    avg_response_time_with_x_clients=[]
+
+    # Define a function to execute load_test for each user concurrently
+    def execute_load_test(trigger_id, num_requests,thread_id):
+        response_times = load_test(request, trigger_id, num_requests,thread_id) 
+        avg_response_time = sum(response_times) / num_requests  #per thread res time we got
+        avg_response_times.append(avg_response_time) # 4 since 4 threads
+        # print(f"avg_response_times {avg_response_times}")
+        # print(f'Number of Requests: {num_requests}, Average Response Time: {avg_response_time}')
+
+
+    for users in range(2,num_users,2):
+        print(f"Load test for {users} parallel clients")
+        threads = []
+
+        # Create and start threads for each user
+        for thread_id in range(users):
+            t = threading.Thread(target=execute_load_test, args=(trigger_id, num_requests_per_user,thread_id))
+            threads.append(t)
+            t.start()
+
+        # Wait for all threads to finish
+        for t in threads:
+            t.join()
+        
+        avg_response_time_with_x_client= sum(avg_response_times) / users
+        avg_response_time_with_x_clients.append(avg_response_time_with_x_client)
+    print(avg_response_time_with_x_clients)
+    plt.plot([users for users in range(2, num_users + 1, 2)], avg_response_time_with_x_clients)
+
+  
+    plt.xlabel('Number of parallel Clients')
+    plt.ylabel('Average Response Time (seconds)')
+    plt.title('Average Response Time vs x client(20 requests)')
+    plt.savefig('response_time_plot.png')  
+    plt.clf()
+    return redirect('trigger_dispatch:code_detail', trigger_id=trigger_id)
 
 
 
