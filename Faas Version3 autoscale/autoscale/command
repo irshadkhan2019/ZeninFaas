@@ -1,0 +1,1 @@
+kubectl autoscale deployment mydeploy --cpu-percent=20 --min=2 --max=20

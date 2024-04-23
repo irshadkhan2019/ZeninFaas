@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zeninsfaasv3-deployment
+  namespace: faas   
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: zeninsfaas
+  template:
+    metadata:
+      labels:
+        app: zeninsfaas
+    spec:
+      containers:
+      - name: zeninsfaas
+        imagePullPolicy: Always 
+        image: izuku11/faas:latest
+        ports:
+        - containerPort: 8000
+      imagePullSecrets:  # Add this section
+      - name: my-docker-secret  # Reference to the secret you created
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zeninsfaasv3-service
+  namespace: faas   
+spec:
+  selector:
+    app: zeninsfaas
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: NodePort

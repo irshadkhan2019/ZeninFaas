@@ -1,0 +1,27 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+   name: mydeploy
+spec:
+   replicas: 1
+   selector:
+    matchLabels:
+     name: deployment
+   template:
+     metadata:
+       name: testpod8
+       labels:
+         name: deployment
+     spec:
+      containers:
+        - name: pythoncontainer
+          image: python:3.9.0-alpine
+          ports:
+          - containerPort: 8080
+          command: ["/bin/sh", "-c"]
+          args: ["while true; do sleep 30; done;"]
+          resources:
+            limits:
+              cpu: "0.5"
+            requests:
+              cpu: "0.2"

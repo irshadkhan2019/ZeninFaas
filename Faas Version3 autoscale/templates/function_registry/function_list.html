@@ -1,0 +1,13 @@
+<!-- function_registration/templates/function_registration/function_list.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+  <h1 class="mt-5">Function List</h1>
+  <ul class="list-group">
+    {% for function in functions %}
+      <li class="list-group-item">{{ function.name }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mt-4 mb-4">Deploy and Test {{ trigger.name }} </h2>
+    <div class="row">
+        <div class="col-md-8">
+            <h4>Deploy Code</h4>
+            <form method="post" action="{% url 'trigger_dispatch:dispatch_test_trigger' trigger.pk %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="code">Code ({{ trigger.function.language }})</label>
+                    <textarea class="form-control" id="code" name="code" rows="10">{{ trigger.function.code }}</textarea>
+                </div>
+                <div class="col-auto">
+                    <label for="parameters" class="sr-only">Parameters (space-separated)</label>
+                    <input type="text" class="form-control mb-2" id="parameters" name="parameters" placeholder="Parameters (space-separated)">
+
+                    <br>
+                    <button type="submit" class="btn btn-primary">Dispatch and Test</button>
+                </div>
+            </form>
+            <hr>
+        
+            
+            <div class="form-group">
+                <label for="response">Response</label>
+                <textarea class="form-control" id="response" rows="5" readonly>{{ response_data }}</textarea>
+            </div>
+            {% if request.user.is_superuser %}
+            <form method="post" action="{% url 'trigger_dispatch:send_req_and_plot' trigger.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Load Test</button>
+            </form>
+        {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
