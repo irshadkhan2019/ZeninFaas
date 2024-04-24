@@ -13,6 +13,7 @@ import threading
 from datetime import datetime
 import random
 import matplotlib.pyplot as plt
+import psutil
 from django.utils.timesince import timesince   
 from django.contrib import messages                          
 configuration.assert_hostname = False
@@ -22,20 +23,18 @@ from kubernetes.client import CustomObjectsApi
 
 
 def get_pods_from_deployment(namespace, deployment_name):
-    # Load kubeconfig file or use in-cluster configuration
     config.load_kube_config()
 
-    # Create an instance of the Kubernetes API client
+    # Kubernetes API client
     api_instance = client.CoreV1Api()
 
     try:
-        # Define label selector to match pods belonging to the deployment
+        # Define label selector 
         label_selector = f"name={deployment_name}"
 
         # List pods in the specified namespace with the specified label selector
         api_response = api_instance.list_namespaced_pod(namespace, label_selector=label_selector)
 
-        # Extract and return the pod objects
         return api_response.items
     except Exception as e:
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
@@ -64,10 +63,7 @@ def dispatch_test_trigger(request, trigger_id,thread_id=None):
             api_apps = AppsV1Api() 
 
             pods=get_pods_from_deployment("default","deployment")
-            # for pod in pods:
-            #     print(pod.metadata.name)
-            # Select the pod with the least CPU usage from the first 100 pods
-            # pod_with_least_cpu_usage = select_pod_with_least_cpu_usage(pods)
+        
             assigned_pod = select_random_pod(pods)
             # print(assigned_pod.metadata.name)
             selected_pod=assigned_pod.metadata.name
@@ -79,7 +75,6 @@ def dispatch_test_trigger(request, trigger_id,thread_id=None):
                 '-c',
                 f"mkdir -p /home/{user_namespace} && echo '{code}' > /home/{user_namespace}/file.py" 
             ]
-
 
             # Execute the command in the pod
             resp="NULL"
@@ -134,6 +129,7 @@ def code_detail(request, trigger_id):
     else:
      return render(request, 'trigger_dispatch/code_detail_node.html', {'trigger': trigger,})   
     
+    
 #Load testing
 def load_test(request,trigger_id,num_requests,thread_id):
     response_times = []
@@ -145,30 +141,34 @@ def load_test(request,trigger_id,num_requests,thread_id):
         end_time = time.time()
         response_time = end_time - start_time
         response_times.append(response_time)
-        # print(f'Request {i}: Response Time: {response_time}')
     return response_times 
 
+
+def get_cpu_utilization():
+    return psutil.cpu_percent(interval=1)
+
 def send_req_and_plot(request, trigger_id):
-    num_users = 15  # Number of concurrent users
-    num_requests_per_user = 40  # Number of requests per user
-    max_requests = 100  # Maximum number of requests
+    num_users = 25  # Number of concurrent users
+    num_requests_per_user = 50  # Number of requests per user
     avg_response_times = []
     avg_response_time_with_x_clients=[]
+    throughput_values=[]
+    throughput_with_x_clients=[]
+    cpu_utilization_values = []
 
-    # Define a function to execute load_test for each user concurrently
+    #load_test for each user concurrently
     def execute_load_test(trigger_id, num_requests,thread_id):
         response_times = load_test(request, trigger_id, num_requests,thread_id) 
         avg_response_time = sum(response_times) / num_requests  #per thread res time we got
         avg_response_times.append(avg_response_time) # 4 since 4 threads
-        # print(f"avg_response_times {avg_response_times}")
-        # print(f'Number of Requests: {num_requests}, Average Response Time: {avg_response_time}')
-
+        throughput = num_requests / avg_response_time
+        throughput_values.append(throughput)
 
     for users in range(2,num_users,2):
         print(f"Load test for {users} parallel clients")
         threads = []
 
-        # Create and start threads for each user
+        # start threads for each user
         for thread_id in range(users):
             t = threading.Thread(target=execute_load_test, args=(trigger_id, num_requests_per_user,thread_id))
             threads.append(t)
@@ -180,16 +180,46 @@ def send_req_and_plot(request, trigger_id):
         
         avg_response_time_with_x_client= sum(avg_response_times) / users
         avg_response_time_with_x_clients.append(avg_response_time_with_x_client)
-    print(avg_response_time_with_x_clients)
-    plt.plot([users for users in range(2, num_users + 1, 2)], avg_response_time_with_x_clients)
+        throughput_with_x_client=sum(throughput_values)/users
+        throughput_with_x_clients.append(throughput_with_x_client)
+        cpu_utilization = get_cpu_utilization()
+        cpu_utilization_values.append(cpu_utilization)
+        print(throughput_with_x_clients)
+        print(avg_response_time_with_x_clients)
+        print(cpu_utilization_values)
 
-  
+    print(cpu_utilization_values)
+    print(throughput_with_x_clients)
+    print(avg_response_time_with_x_clients)
+    # Plot the results(response time)
+    plt.plot([users for users in range(2, num_users, 2)], avg_response_time_with_x_clients, label='Response Time')
     plt.xlabel('Number of parallel Clients')
-    plt.ylabel('Average Response Time (seconds)')
-    plt.title('Average Response Time vs x client(20 requests)')
+    plt.ylabel('Response time')
+    plt.title('Average Response Time vs Number of clients')
+    # Save the plot to a file
+    plt.legend()
     plt.savefig('response_time_plot.png')  
     plt.clf()
-    return redirect('trigger_dispatch:code_detail', trigger_id=trigger_id)
 
+    # Plot Througput
+    plt.plot([users for users in range(2, num_users , 2)], throughput_with_x_clients, label='Throughput')
+    plt.xlabel('Number of parallel Clients')
+    plt.ylabel('Throughput')
+    plt.title('Average Throughput vs Number of clients')
+    # Save the plot to a file
+    plt.legend()
+    plt.savefig('throughput_plot.png')  
+    plt.clf()
+    # plot Cpu util
+
+    plt.plot([users for users in range(2, num_users , 2)], cpu_utilization_values, label='CPU Utilization')
+    plt.xlabel('Number of parallel Clients')
+    plt.ylabel('Cpu utilization')
+    plt.title('Cpu utilization vs Number of clients')
+    # Save the plot to a file
+    plt.legend()
+    plt.savefig('cpu_util_plot.png')  
+    plt.clf()
+    return redirect('trigger_dispatch:code_detail', trigger_id=trigger_id)
 
 
