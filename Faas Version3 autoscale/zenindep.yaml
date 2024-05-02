@@ -15,12 +15,11 @@ spec:
     spec:
       containers:
       - name: zeninsfaas
-        imagePullPolicy: Always 
-        image: izuku11/faas:latest
+        image: docker.io/izuku11/faas
         ports:
         - containerPort: 8000
-      imagePullSecrets:  # Add this section
-      - name: my-docker-secret  # Reference to the secret you created
+      imagePullSecrets:  
+      - name: my-docker-secret  
 ---
 apiVersion: v1
 kind: Service
@@ -32,6 +31,6 @@ spec:
     app: zeninsfaas
   ports:
     - protocol: TCP
-      port: 8000
+      port: 80
       targetPort: 8000
   type: NodePort
