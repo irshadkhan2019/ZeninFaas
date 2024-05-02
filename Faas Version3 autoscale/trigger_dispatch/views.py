@@ -40,7 +40,6 @@ def get_pods_from_deployment(namespace, deployment_name):
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
         return []
     
-
 def select_random_pod(pods):
     running_pods = [pod for pod in pods if pod.status.phase == 'Running']
     if running_pods:
