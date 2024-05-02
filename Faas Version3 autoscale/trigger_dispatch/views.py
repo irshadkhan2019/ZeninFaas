@@ -40,7 +40,6 @@ def get_pods_from_deployment(namespace, deployment_name):
         print("Exception when calling CoreV1Api->list_namespaced_pod: %s\n" % e)
         return []
     
-
 def select_random_pod(pods):
     running_pods = [pod for pod in pods if pod.status.phase == 'Running']
     if running_pods:
@@ -133,6 +132,7 @@ def code_detail(request, trigger_id):
 #Load testing
 def load_test(request,trigger_id,num_requests,thread_id):
     response_times = []
+    cpu_utilizations=[]
     request.method = 'POST'
     request.POST = {'code': 'print("Hello, world!")', 'parameters': ''}
     for i in range(1, num_requests + 1):
@@ -141,25 +141,30 @@ def load_test(request,trigger_id,num_requests,thread_id):
         end_time = time.time()
         response_time = end_time - start_time
         response_times.append(response_time)
-    return response_times 
+        cpu_utilization=get_cpu_utilization()
+        cpu_utilizations.append(cpu_utilization)
+    return response_times,cpu_utilizations
 
 
 def get_cpu_utilization():
     return psutil.cpu_percent(interval=1)
 
 def send_req_and_plot(request, trigger_id):
-    num_users = 25  # Number of concurrent users
-    num_requests_per_user = 50  # Number of requests per user
+    num_users = 6  # Number of concurrent users
+    num_requests_per_user = 10  # Number of requests per user
     avg_response_times = []
     avg_response_time_with_x_clients=[]
     throughput_values=[]
     throughput_with_x_clients=[]
-    cpu_utilization_values = []
+    avg_cpu_utilizations= []
+    avg_cpu_utilization_with_x_clients=[]
 
     #load_test for each user concurrently
     def execute_load_test(trigger_id, num_requests,thread_id):
-        response_times = load_test(request, trigger_id, num_requests,thread_id) 
+        response_times,cpu_utilizations= load_test(request, trigger_id, num_requests,thread_id) 
         avg_response_time = sum(response_times) / num_requests  #per thread res time we got
+        avg_cpu_utilization=sum(cpu_utilizations)/num_requests
+        avg_cpu_utilizations.append(avg_cpu_utilization)
         avg_response_times.append(avg_response_time) # 4 since 4 threads
         throughput = num_requests / avg_response_time
         throughput_values.append(throughput)
@@ -182,13 +187,13 @@ def send_req_and_plot(request, trigger_id):
         avg_response_time_with_x_clients.append(avg_response_time_with_x_client)
         throughput_with_x_client=sum(throughput_values)/users
         throughput_with_x_clients.append(throughput_with_x_client)
-        cpu_utilization = get_cpu_utilization()
-        cpu_utilization_values.append(cpu_utilization)
+        avg_cpu_utilization_with_x_clients.append((sum(avg_cpu_utilizations)/users))
         print(throughput_with_x_clients)
         print(avg_response_time_with_x_clients)
-        print(cpu_utilization_values)
+        print(avg_cpu_utilization_with_x_clients)
+   
 
-    print(cpu_utilization_values)
+    print(avg_cpu_utilization_with_x_clients)
     print(throughput_with_x_clients)
     print(avg_response_time_with_x_clients)
     # Plot the results(response time)
@@ -212,7 +217,7 @@ def send_req_and_plot(request, trigger_id):
     plt.clf()
     # plot Cpu util
 
-    plt.plot([users for users in range(2, num_users , 2)], cpu_utilization_values, label='CPU Utilization')
+    plt.plot([users for users in range(2, num_users , 2)], avg_cpu_utilization_with_x_clients, label='CPU Utilization')
     plt.xlabel('Number of parallel Clients')
     plt.ylabel('Cpu utilization')
     plt.title('Cpu utilization vs Number of clients')
