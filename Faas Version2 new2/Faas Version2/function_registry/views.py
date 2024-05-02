@@ -13,7 +13,7 @@ def register_function(request):
             function = form.save(commit=False)
             function.user = request.user
             function.save()
-            # deploy_function_to_kubernetes(function,request)
+            check_or_create_namespace(function,request)
 
             return redirect('function_registry:function_list')
     else:
@@ -26,16 +26,10 @@ def function_list(request):
     return render(request, 'function_registry/function_list.html', {'functions': functions})
 
 @login_required(login_url='authentication:login')
-def deploy_function_to_kubernetes(function,request):
+def check_or_create_namespace(function,request):
     user_namespace = request.user.username.lower()
     function_name = function.name.replace(' ', '-').lower()
-
-    print(user_namespace,function_name)
-    imageName=""
-    if function.language.lower() == "python":
-        imageName='python:latest'
-    else:
-        imageName='node:latest'    
+   
     config.load_kube_config()
 
     # Create Kubernetes API client
@@ -57,70 +51,7 @@ def deploy_function_to_kubernetes(function,request):
                 }
             }
             api_core.create_namespace(body=namespace_manifest)
-
-
-    service_manifest = {
-            "apiVersion": "v1",
-            "kind": "Service",
-            "metadata": {
-                "name": f"{function_name}-service"
-            },
-            "spec": {
-                "selector": {
-                    "app": function_name
-                },
-                "ports": [
-                    {
-                        "protocol": "TCP",
-                        "port": 8080,
-                        "targetPort": 8080
-                    }
-                ],
-                "type": "ClusterIP"
-            }
-        }
-    api_core.create_namespaced_service(namespace=user_namespace, body=service_manifest)
-
-    deployment_manifest = {
-    "apiVersion": "apps/v1",
-    "kind": "Deployment",
-    "metadata": {
-        "name": str(function_name),
-    },
-    "spec": {
-        "selector": {
-            "matchLabels": {
-                "app": str(function_name),
-                "function_id": str(function.id)
-            }
-        },
-        "replicas": 1,
-        "template": {
-            "metadata": {
-                "labels": {
-                    "app": str(function_name),
-                    "function_id": str(function.id)
-                }
-            },
-            "spec": {
-                "containers": [
-                    {
-                        "name": str(function_name),
-                        "image": str(imageName),
-                        "ports": [
-                            {
-                                "containerPort": 8080,
-                            }
-                        ],
-                        "command": [ "/bin/bash", "-c" ],
-                        "args": [ f"while true; do sleep 30; done;" ],
-                     
-                    }
-                ]
-            }
-        }
-    }
-}
+    
 
     api_instance.create_namespaced_deployment(namespace=user_namespace, body=deployment_manifest)
     print("Deployment created successfully")
