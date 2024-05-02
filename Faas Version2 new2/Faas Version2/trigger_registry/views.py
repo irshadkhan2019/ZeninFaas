@@ -4,6 +4,7 @@ from .models import Trigger
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
+
 # Create your views here.
 @login_required(login_url='authentication:login')
 def register_trigger(request):
