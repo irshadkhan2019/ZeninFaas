@@ -52,9 +52,7 @@ def check_or_create_namespace(function,request):
             }
             api_core.create_namespace(body=namespace_manifest)
     
-
-    api_instance.create_namespaced_deployment(namespace=user_namespace, body=deployment_manifest)
-    print("Deployment created successfully")
+            print("Deployment created successfully")
 
 @login_required(login_url='authentication:login')
 def zenin_faas(request):
