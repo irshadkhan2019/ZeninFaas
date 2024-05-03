@@ -1,0 +1,21 @@
+<!-- trigger_list.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-4 mb-4">Trigger List</h1>
+    {% include 'alerts.html' %}
+    <ul class="list-group">
+        {% for trigger in triggers %}
+        <li class="list-group-item">
+            <h4><a href="{% url 'trigger_dispatch:code_detail' trigger.id %}">{{ trigger.name }}</a></h4>
+            <p>Associated Functions:</p>
+            <ul class="list-group">
+                <li class="list-group-item">{{ trigger.function.name }}</li>
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

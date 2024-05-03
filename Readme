@@ -1,0 +1,53 @@
+Faas version 2(realtime pod creation and destruction)
+---------------
+A) Running Code
+
+1)To run just checkout to env using source env/bin/activate. 
+eg:irshad@irshad:~/Desktop/ZeninFaas/Faas Version2/Faas Version2$ source env/bin/activate
+1.1)Install all dependencies using pip3 install -r requirement.txt
+2)Then run python manage.py runserver
+3)Go to site,either Register a new user or use already created adminsuperuser.
+4)Adminsuperuser-> username:Asta ,Password:pass
+5)Go to register function and register a function by choosing python as language.
+6)Register a trigger to that function by selection the function from dropdown.
+7)Go to View trigger and click trigger name to see the function that needed to dispatched.
+8)Enter the code or ant additional params and click dispatch and trigger to dispatch the function.
+
+B)LOAD TEST and performance analysis graphs 
+--------------------------------------------------
+1)Login via adminsuperuser using password and user mentioned above.
+2)Go to View trigger and click trigger name to see the function that needed to dispatched,here at bottom click load test button which will compute response time,throughput and cpu utilization by increasing load.
+3)See the server terminal for logs.
+4)Once load test done ,3 graphs will be generated in the main directory.
+
+
+Faas version 3(autoscaling)
+-------------------------------
+A) Running Code
+
+1)To run just checkout to env using source env/bin/activate. 
+1.1)Install all dependencies using pip3 install -r requirement.txt
+2)Go to autoscale folder and run the autoscale.sh script which will create deployment which will be monitored by metric pod and based on load it will scale out and scale in.
+3)run command:kubectl get pod -n kube-system  and check if the pod of metrics-server is running successfully.
+4)run the command :kubectl autoscale deployment mydeploy --cpu-percent=20 --min=2 --max=10   ->(min and max can be changed) ,this will monitor aur deployment mydeploy
+5)Then run python manage.py runserver
+6)Go to site,either Register a new user or use already created adminsuperuser.
+7)Adminsuperuser-> username:Asta ,Password:pass
+8)Go to register function and register a function by choosing python as language.
+9)Register a trigger to that function by selection the function from dropdown.
+10)Go to View trigger and click trigger name to see the function that needed to dispatched.
+11)Enter the code or ant additional params and click dispatch and trigger to dispatch the function.
+
+B)LOAD TEST and performance analysis graphs 
+------------------------------------------
+
+1)Login via adminsuperuser using password and user mentioned above.
+2)Go to View trigger and click trigger name to see the function that needed to dispatched,here at bottom click load test button which will compute response time,throughput and cpu utilization by increasing load.
+3)See the server terminal for logs.
+4)Once load test done ,3 graphs will be generated in the main directory.
+
+Faas version 1(managing environment)
+    -same setup steps as version2
+    -to delete pod click on delete resource button 
+    
+

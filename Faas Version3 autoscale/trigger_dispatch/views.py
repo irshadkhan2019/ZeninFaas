@@ -150,8 +150,8 @@ def get_cpu_utilization():
     return psutil.cpu_percent(interval=1)
 
 def send_req_and_plot(request, trigger_id):
-    num_users = 6  # Number of concurrent users
-    num_requests_per_user = 10  # Number of requests per user
+    num_users = 100  # Number of concurrent users
+    num_requests_per_user = 2  # Number of requests per user
     avg_response_times = []
     avg_response_time_with_x_clients=[]
     throughput_values=[]
@@ -191,6 +191,9 @@ def send_req_and_plot(request, trigger_id):
         print(throughput_with_x_clients)
         print(avg_response_time_with_x_clients)
         print(avg_cpu_utilization_with_x_clients)
+        avg_response_times.clear()
+        throughput_values.clear()
+        avg_cpu_utilizations.clear()
    
 
     print(avg_cpu_utilization_with_x_clients)

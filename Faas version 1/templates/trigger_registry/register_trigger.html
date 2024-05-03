@@ -1,0 +1,21 @@
+<!-- register_trigger.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-4 mb-4">Register Trigger</h1>
+    <form method="post" class="mb-4">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="id_name">Name:</label>
+            {{ form.name}}
+        </div>
+        <div class="form-group">
+            <label for="id_functions">Functions:</label>
+            {{ form.function }}
+        </div>
+        <button type="submit" class="btn btn-primary">Register Trigger</button>
+    </form>
+</div>
+{% endblock %}

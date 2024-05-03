@@ -18,6 +18,8 @@ from kubernetes.client import AppsV1Api
 from kubernetes.client.rest import ApiException
 import matplotlib.pyplot as plt
 import psutil
+import uuid
+
 
 
 def wait_for_pod_ready(api, pod_name, namespace, timeout_seconds=60):
@@ -61,7 +63,8 @@ def dispatch_test_trigger(request, trigger_id,thread_id=None):
             api_apps = AppsV1Api() 
 
              # Create a unique pod name based on the current timestamp
-            pod_name = f"{trigger.function.name.replace(' ', '-').lower()}-{int(time.time())}"
+            random_uuid = uuid.uuid4()
+            pod_name = f"{trigger.function.name.replace(' ', '-').lower()}-{int(time.time())}-{random_uuid}"
             print("Thread ID:"+str(thread_id)+"got pod"+str(pod_name))
             
             deployment_manifest = {
@@ -143,7 +146,7 @@ def dispatch_test_trigger(request, trigger_id,thread_id=None):
             end_time = time.time()
             request_time=end_time-start_time
             # api.delete_namespaced_pod(name=pod_name, namespace=request.user.username.lower())
-            api_apps.delete_namespaced_deployment(name=pod_name, namespace=user_namespace)
+            api_apps.delete_namespaced_deployment(name=pod_name_full, namespace=user_namespace)
             response_data = {'status': 'success', 'message': 'Code deployed successfully','response':resp,'request_time':request_time}
         except Exception as e:
             response_data = {'status': 'error', 'message': str(e)}
@@ -190,8 +193,8 @@ def get_cpu_utilization():
     return psutil.cpu_percent(interval=1)
 
 def send_req_and_plot(request, trigger_id):
-    num_users = 5  # Number of concurrent users
-    num_requests_per_user = 5  # Number of requests per user
+    num_users = 100 # Number of concurrent users
+    num_requests_per_user = 1  # Number of requests per user
     avg_response_times = []
     avg_response_time_with_x_clients=[]
     throughput_values=[]
